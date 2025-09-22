@@ -58,9 +58,11 @@ public interface TransactionRepository extends JpaRepository<Transaction, Long> 
                                    @Param("startDate") LocalDateTime startDate,
                                    @Param("endDate") LocalDateTime endDate);
 
-    @Query("SELECT COUNT(t) FROM Transaction t WHERE " +
-            "(t.fromAccount.id = :accountId OR t.toAccount.id = :accountId) " +
+    @Query(value = "SELECT COUNT(*) FROM transaction t " +
+            "WHERE (t.from_account_id = :accountId OR t.to_account_id = :accountId) " +
             "AND t.status = 'COMPLETED' " +
-            "AND DATE(t.createdAt) = CURRENT_DATE")
+            "AND t.created_at::date = CURRENT_DATE",
+            nativeQuery = true)
     long countTodaysTransactions(@Param("accountId") Long accountId);
+
 }
