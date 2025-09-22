@@ -4,6 +4,7 @@ import com.sam.bankmanagement.Bank.Management.Application.dto.CreateCustomerRequ
 import com.sam.bankmanagement.Bank.Management.Application.dto.CustomerDto;
 import com.sam.bankmanagement.Bank.Management.Application.entity.Account;
 import com.sam.bankmanagement.Bank.Management.Application.entity.Customer;
+import com.sam.bankmanagement.Bank.Management.Application.exception.ActiveAccountsExistException;
 import com.sam.bankmanagement.Bank.Management.Application.exception.DuplicateResourceException;
 import com.sam.bankmanagement.Bank.Management.Application.exception.ResourceNotFoundException;
 import com.sam.bankmanagement.Bank.Management.Application.mapper.DtoMapper;
@@ -28,12 +29,10 @@ public class CustomerService {
     public CustomerDto createCustomer(CreateCustomerRequest request) {
         log.info("Creating customer with email: {}", request.getEmail());
 
-        // Check for existing email
         if (customerRepository.existsByEmail(request.getEmail())) {
             throw new DuplicateResourceException("Customer with email " + request.getEmail() + " already exists");
         }
 
-        // Check for existing national ID
         if (customerRepository.existsByNationalId(request.getNationalId())) {
             throw new DuplicateResourceException("Customer with national ID " + request.getNationalId() + " already exists");
         }
@@ -91,13 +90,11 @@ public class CustomerService {
         Customer customer = customerRepository.findById(id)
                 .orElseThrow(() -> new ResourceNotFoundException("Customer", "id", id));
 
-        // Check if email is being changed and if new email already exists
         if (!customer.getEmail().equals(request.getEmail()) &&
                 customerRepository.existsByEmail(request.getEmail())) {
             throw new DuplicateResourceException("Customer with email " + request.getEmail() + " already exists");
         }
 
-        // Check if national ID is being changed and if new national ID already exists
         if (!customer.getNationalId().equals(request.getNationalId()) &&
                 customerRepository.existsByNationalId(request.getNationalId())) {
             throw new DuplicateResourceException("Customer with national ID " + request.getNationalId() + " already exists");
@@ -123,12 +120,11 @@ public class CustomerService {
         Customer customer = customerRepository.findById(id)
                 .orElseThrow(() -> new ResourceNotFoundException("Customer", "id", id));
 
-        // Check if customer has active accounts
         if (customer.getAccounts() != null && !customer.getAccounts().isEmpty()) {
             boolean hasActiveAccounts = customer.getAccounts().stream()
                     .anyMatch(account -> account.getStatus() == Account.AccountStatus.ACTIVE);
             if (hasActiveAccounts) {
-                throw new IllegalStateException("Cannot delete customer with active accounts");
+                throw new ActiveAccountsExistException(id);
             }
         }
 

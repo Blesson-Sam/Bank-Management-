@@ -6,6 +6,7 @@ import com.sam.bankmanagement.Bank.Management.Application.dto.TransferRequest;
 import com.sam.bankmanagement.Bank.Management.Application.entity.Account;
 import com.sam.bankmanagement.Bank.Management.Application.entity.Transaction;
 import com.sam.bankmanagement.Bank.Management.Application.exception.AccountStatusException;
+import com.sam.bankmanagement.Bank.Management.Application.exception.DailyLimitExceededException;
 import com.sam.bankmanagement.Bank.Management.Application.exception.InsufficientFundsException;
 import com.sam.bankmanagement.Bank.Management.Application.exception.ResourceNotFoundException;
 import com.sam.bankmanagement.Bank.Management.Application.mapper.DtoMapper;
@@ -37,46 +38,6 @@ public class TransactionService {
     private static final BigDecimal MAX_DAILY_WITHDRAWAL = new BigDecimal("10000.00");
 
     @Transactional
-    public TransactionDto deposit(DepositWithdrawRequest request) {
-        log.info("Processing deposit for account: {} amount: {}", request.getAccountNumber(), request.getAmount());
-
-        Account account = getActiveAccount(request.getAccountNumber());
-
-        // Create pending transaction
-        Transaction transaction = Transaction.builder()
-                .transactionId(generateTransactionId())
-                .type(Transaction.TransactionType.DEPOSIT)
-                .amount(request.getAmount())
-                .description(request.getDescription() != null ? request.getDescription() : "Deposit")
-                .toAccount(account)
-                .status(Transaction.TransactionStatus.PENDING)
-                .build();
-
-        Transaction savedTransaction = transactionRepository.save(transaction);
-
-        try {
-            // Update account balance
-            account.setBalance(account.getBalance().subtract(request.getAmount()));
-            accountRepository.save(account);
-
-            // Mark transaction as completed
-            savedTransaction.setStatus(Transaction.TransactionStatus.COMPLETED);
-            savedTransaction.setCompletedAt(LocalDateTime.now());
-            savedTransaction = transactionRepository.save(savedTransaction);
-
-            log.info("Withdrawal completed successfully. Transaction ID: {}", savedTransaction.getTransactionId());
-
-        } catch (Exception e) {
-            log.error("Withdrawal failed for transaction: {}", savedTransaction.getTransactionId(), e);
-            savedTransaction.setStatus(Transaction.TransactionStatus.FAILED);
-            transactionRepository.save(savedTransaction);
-            throw new RuntimeException("Withdrawal processing failed", e);
-        }
-
-        return dtoMapper.toTransactionDto(savedTransaction);
-    }
-
-    @Transactional
     public TransactionDto transfer(TransferRequest request) {
         log.info("Processing transfer from: {} to: {} amount: {}",
                 request.getFromAccountNumber(), request.getToAccountNumber(), request.getAmount());
@@ -88,15 +49,10 @@ public class TransactionService {
         Account fromAccount = getActiveAccount(request.getFromAccountNumber());
         Account toAccount = getActiveAccount(request.getToAccountNumber());
 
-        // Validate sufficient funds
         if (fromAccount.getBalance().compareTo(request.getAmount()) < 0) {
             throw new InsufficientFundsException(fromAccount.getAccountNumber(), request.getAmount(), fromAccount.getBalance());
         }
 
-        // Check daily transaction limit
-        validateDailyLimits(fromAccount.getId(), request.getAmount());
-
-        // Create pending transaction
         Transaction transaction = Transaction.builder()
                 .transactionId(generateTransactionId())
                 .type(Transaction.TransactionType.TRANSFER)
@@ -110,14 +66,13 @@ public class TransactionService {
         Transaction savedTransaction = transactionRepository.save(transaction);
 
         try {
-            // Update account balances
+
             fromAccount.setBalance(fromAccount.getBalance().subtract(request.getAmount()));
             toAccount.setBalance(toAccount.getBalance().add(request.getAmount()));
 
             accountRepository.save(fromAccount);
             accountRepository.save(toAccount);
 
-            // Mark transaction as completed
             savedTransaction.setStatus(Transaction.TransactionStatus.COMPLETED);
             savedTransaction.setCompletedAt(LocalDateTime.now());
             savedTransaction = transactionRepository.save(savedTransaction);
@@ -161,7 +116,6 @@ public class TransactionService {
     public List<TransactionDto> getTransactionsByAccountNumber(String accountNumber) {
         log.info("Fetching transactions for account number: {}", accountNumber);
 
-        // Verify account exists
         Account account = accountRepository.findByAccountNumber(accountNumber)
                 .orElseThrow(() -> new ResourceNotFoundException("Account", "accountNumber", accountNumber));
 
@@ -201,69 +155,48 @@ public class TransactionService {
         return account;
     }
 
-    private void validateDailyLimits(Long accountId, BigDecimal amount) {
-        // Check daily transaction count
-        long todaysTransactionCount = transactionRepository.countTodaysTransactions(accountId);
-        if (todaysTransactionCount >= MAX_DAILY_TRANSACTIONS) {
-            throw new IllegalStateException("Daily transaction limit exceeded. Maximum " + MAX_DAILY_TRANSACTIONS + " transactions per day");
-        }
-
-        // Check daily withdrawal amount (for withdrawals and transfers from account)
-        LocalDateTime startOfDay = LocalDateTime.now().toLocalDate().atStartOfDay();
-        LocalDateTime endOfDay = startOfDay.plusDays(1).minusSeconds(1);
-
-        BigDecimal todaysWithdrawals = transactionRepository.getTotalWithdrawals(accountId, startOfDay, endOfDay);
-        if (todaysWithdrawals == null) todaysWithdrawals = BigDecimal.ZERO;
-
-        if (todaysWithdrawals.add(amount).compareTo(MAX_DAILY_WITHDRAWAL) > 0) {
-            throw new IllegalStateException("Daily withdrawal limit exceeded. Maximum " + MAX_DAILY_WITHDRAWAL + " per day. " +
-                    "Today's withdrawals: " + todaysWithdrawals + ", Requested: " + amount);
-        }
-    }
 
     private String generateTransactionId() {
         return "TXN" + System.currentTimeMillis()
                 + UUID.randomUUID().toString().substring(0, 6).toUpperCase();
     }
 
-//    @Transactional
-//    public TransactionDto deposit(DepositWithdrawRequest request) {
-//        log.info("Processing deposit for account: {} amount: {}", request.getAccountNumber(), request.getAmount());
-//
-//        Account account = getActiveAccount(request.getAccountNumber());
-//
-//        // Create pending transaction
-//        Transaction transaction = Transaction.builder()
-//                .transactionId(generateTransactionId())
-//                .type(Transaction.TransactionType.DEPOSIT)
-//                .amount(request.getAmount())
-//                .description(request.getDescription() != null ? request.getDescription() : "Deposit")
-//                .toAccount(account)
-//                .status(Transaction.TransactionStatus.PENDING)
-//                .build();
-//
-//        Transaction savedTransaction = transactionRepository.save(transaction);
-//
-//        try {
-//            // Update account balance
-//            account.setBalance(account.getBalance().add(request.getAmount()));
-//            accountRepository.save(account);
-//
-//            // Mark transaction as completed
-//            savedTransaction.setStatus(Transaction.TransactionStatus.COMPLETED);
-//            savedTransaction.setCompletedAt(LocalDateTime.now());
-//            savedTransaction = transactionRepository.save(savedTransaction);
-//
-//            log.info("Deposit completed successfully. Transaction ID: {}", savedTransaction.getTransactionId());
-//        } catch (Exception e) {
-//            log.error("Deposit failed for transaction: {}", savedTransaction.getTransactionId(), e);
-//            savedTransaction.setStatus(Transaction.TransactionStatus.FAILED);
-//            transactionRepository.save(savedTransaction);
-//            throw new RuntimeException("Deposit processing failed", e);
-//        }
-//
-//        return dtoMapper.toTransactionDto(savedTransaction);
-//    }
+    @Transactional
+    public TransactionDto deposit(DepositWithdrawRequest request) {
+        log.info("Processing deposit for account: {} amount: {}", request.getAccountNumber(), request.getAmount());
+
+        Account account = getActiveAccount(request.getAccountNumber());
+
+        Transaction transaction = Transaction.builder()
+                .transactionId(generateTransactionId())
+                .type(Transaction.TransactionType.DEPOSIT)
+                .amount(request.getAmount())
+                .description(request.getDescription() != null ? request.getDescription() : "Deposit")
+                .toAccount(account)
+                .status(Transaction.TransactionStatus.PENDING)
+                .build();
+
+        Transaction savedTransaction = transactionRepository.save(transaction);
+
+        try {
+
+            account.setBalance(account.getBalance().add(request.getAmount()));
+            accountRepository.save(account);
+
+            savedTransaction.setStatus(Transaction.TransactionStatus.COMPLETED);
+            savedTransaction.setCompletedAt(LocalDateTime.now());
+            savedTransaction = transactionRepository.save(savedTransaction);
+
+            log.info("Deposit completed successfully. Transaction ID: {}", savedTransaction.getTransactionId());
+        } catch (Exception e) {
+            log.error("Deposit failed for transaction: {}", savedTransaction.getTransactionId(), e);
+            savedTransaction.setStatus(Transaction.TransactionStatus.FAILED);
+            transactionRepository.save(savedTransaction);
+            throw new RuntimeException("Deposit processing failed", e);
+        }
+
+        return dtoMapper.toTransactionDto(savedTransaction);
+    }
 
     @Transactional
     public TransactionDto withdraw(DepositWithdrawRequest request) {
@@ -271,15 +204,10 @@ public class TransactionService {
 
         Account account = getActiveAccount(request.getAccountNumber());
 
-        // Validate sufficient funds
         if (account.getBalance().compareTo(request.getAmount()) < 0) {
             throw new InsufficientFundsException(account.getAccountNumber(), request.getAmount(), account.getBalance());
         }
 
-        // Check daily transaction limit
-        validateDailyLimits(account.getId(), request.getAmount());
-
-        // Create pending transaction
         Transaction transaction = Transaction.builder()
                 .transactionId(generateTransactionId())
                 .type(Transaction.TransactionType.WITHDRAWAL)
@@ -292,11 +220,8 @@ public class TransactionService {
         Transaction savedTransaction = transactionRepository.save(transaction);
 
         try {
-            // Update account balance
             account.setBalance(account.getBalance().subtract(request.getAmount()));
             accountRepository.save(account);
-
-            // Mark transaction as completed
             savedTransaction.setStatus(Transaction.TransactionStatus.COMPLETED);
             savedTransaction.setCompletedAt(LocalDateTime.now());
             savedTransaction = transactionRepository.save(savedTransaction);
@@ -308,7 +233,7 @@ public class TransactionService {
             transactionRepository.save(savedTransaction);
             throw new RuntimeException("Withdrawal processing failed", e);
         }
-
         return dtoMapper.toTransactionDto(savedTransaction);
     }
+
 }

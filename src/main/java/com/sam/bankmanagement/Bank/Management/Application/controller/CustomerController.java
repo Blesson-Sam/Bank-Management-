@@ -69,7 +69,7 @@ public class CustomerController {
 
     @GetMapping
     @Operation(summary = "Get all customers", description = "Retrieves all customers in the system")
-    @ApiResponse(responseCode = "200", description = "Customers retrieved successfully")
+    @ApiResponse(responseCode = "204", description = "Customers retrieved successfully")
     public ResponseEntity<List<CustomerDto>> getAllCustomers() {
         List<CustomerDto> customers = customerService.getAllCustomers();
         return ResponseEntity.ok(customers);
@@ -129,4 +129,5 @@ public class CustomerController {
         customerService.deleteCustomer(id);
         return ResponseEntity.noContent().build();
     }
+
 }

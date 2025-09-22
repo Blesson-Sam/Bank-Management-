@@ -37,7 +37,7 @@ public class AccountService {
         this.accountRepository = accountRepository;
         this.customerRepository = customerRepository;
         this.transactionRepository = transactionRepository;
-        this.dtoMapper = dtoMapper; // Spring injects the generated DtoMapperImpl
+        this.dtoMapper = dtoMapper;
     }
 
     @Value("${app.interest.savings-rate:3.5}")
@@ -76,7 +76,6 @@ public class AccountService {
 
         Account savedAccount = accountRepository.save(account);
 
-        // Create initial deposit transaction if there's an initial deposit
         if (request.getInitialDeposit() != null && request.getInitialDeposit().compareTo(BigDecimal.ZERO) > 0) {
             Transaction depositTransaction = Transaction.builder()
                     .transactionId(UUID.randomUUID().toString())
@@ -151,7 +150,8 @@ public class AccountService {
         log.info("Starting daily interest calculation");
 
         LocalDateTime cutoffDate = LocalDateTime.now().minusDays(1);
-        List<Account> accounts = accountRepository.findAccountsForInterestCalculation(cutoffDate);
+        List<Account> accounts = accountRepository.
+                findAccountsForInterestCalculation(cutoffDate);
 
         for (Account account : accounts) {
             calculateInterestForAccount(account);
@@ -169,7 +169,6 @@ public class AccountService {
         BigDecimal dailyRate = account.getInterestRate().divide(BigDecimal.valueOf(365 * 100), 8, RoundingMode.HALF_UP);
         BigDecimal dailyInterest = account.getBalance().multiply(dailyRate).setScale(2, RoundingMode.HALF_UP);
 
-        // Add to accrued interest
         account.setAccruedInterest(account.getAccruedInterest().add(dailyInterest));
         account.setLastInterestCalculated(LocalDateTime.now());
 
@@ -188,7 +187,6 @@ public class AccountService {
         if (account.getAccruedInterest().compareTo(BigDecimal.ZERO) > 0) {
             account.setBalance(account.getBalance().add(account.getAccruedInterest()));
 
-            // Create interest credit transaction
             Transaction interestTransaction = Transaction.builder()
                     .transactionId(UUID.randomUUID().toString())
                     .type(Transaction.TransactionType.INTEREST_CREDIT)

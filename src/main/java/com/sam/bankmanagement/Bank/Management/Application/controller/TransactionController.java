@@ -130,10 +130,7 @@ public class TransactionController {
                 Sort.by(sortBy).descending() : Sort.by(sortBy).ascending();
 
         Pageable pageable = PageRequest.of(page, size, sort);
-
-        // First get account to get ID
-        // This is simplified - in real implementation you'd want to optimize this
-        Page<TransactionDto> transactions = transactionService.getTransactionsByAccountId(1L, pageable); // This needs account ID
+        Page<TransactionDto> transactions = transactionService.getTransactionsByAccountId(1L, pageable);
         return ResponseEntity.ok(transactions);
     }
 
