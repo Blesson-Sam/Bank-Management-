@@ -1,6 +1,6 @@
 # Bank-Management
 
-## Postman Endpoints: https://blessonsam.postman.co/workspace/Blesson-Sam's-Workspace~71761ab4-d6bd-4e0c-8bdf-dccfc5f03aa5/collection/46342078-bffc3b48-c938-44d9-b62f-be1a834d2cff?action=share&creator=46342078 
+### Postman Endpoints: https://blessonsam.postman.co/workspace/Blesson-Sam's-Workspace~71761ab4-d6bd-4e0c-8bdf-dccfc5f03aa5/collection/46342078-bffc3b48-c938-44d9-b62f-be1a834d2cff?action=share&creator=46342078 
 
 ## Project Structure 
 
@@ -102,7 +102,3 @@ CREATE TABLE transactions (
     CONSTRAINT fk_transaction_to_account FOREIGN KEY (to_account_id) REFERENCES accounts(id)
 );
 
-
-<img width="468" height="646" alt="image" src="https://github.com/user-attachments/assets/cb51124f-2d23-44f8-9558-a4728e113e6b" />
-
-<img width="451" height="618" alt="image" src="https://github.com/user-attachments/assets/75b16490-e718-462e-a761-1c98ac5f3bde" />
