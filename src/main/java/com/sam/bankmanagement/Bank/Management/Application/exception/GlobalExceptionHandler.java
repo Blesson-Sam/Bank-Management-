@@ -176,17 +176,6 @@ public class GlobalExceptionHandler {
 
         return new ResponseEntity<>(apiError, HttpStatus.BAD_REQUEST);
     }
-    @ExceptionHandler(DailyLimitExceededException.class)
-    public ResponseEntity<ApiError> handleDailyLimit(DailyLimitExceededException ex, HttpServletRequest request) {
-        ApiError error = ApiError.builder()
-                .timestamp(LocalDateTime.now())
-                .status(HttpStatus.BAD_REQUEST.value())
-                .error("Daily Limit Exceeded")
-                .message(ex.getMessage())
-                .path(request.getRequestURI())
-                .build();
-        return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(error);
-    }
 
     @ExceptionHandler(Exception.class)
     public ResponseEntity<ApiError> handleGlobalException(

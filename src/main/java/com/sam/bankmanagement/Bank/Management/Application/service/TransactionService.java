@@ -6,7 +6,6 @@ import com.sam.bankmanagement.Bank.Management.Application.dto.TransferRequest;
 import com.sam.bankmanagement.Bank.Management.Application.entity.Account;
 import com.sam.bankmanagement.Bank.Management.Application.entity.Transaction;
 import com.sam.bankmanagement.Bank.Management.Application.exception.AccountStatusException;
-import com.sam.bankmanagement.Bank.Management.Application.exception.DailyLimitExceededException;
 import com.sam.bankmanagement.Bank.Management.Application.exception.InsufficientFundsException;
 import com.sam.bankmanagement.Bank.Management.Application.exception.ResourceNotFoundException;
 import com.sam.bankmanagement.Bank.Management.Application.mapper.DtoMapper;
