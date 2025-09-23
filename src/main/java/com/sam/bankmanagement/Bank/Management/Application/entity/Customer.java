@@ -43,6 +43,7 @@ public class Customer {
 
     @Enumerated(EnumType.STRING)
     @Column(nullable = false)
+    @Builder.Default
     private CustomerStatus status = CustomerStatus.ACTIVE;
 
     @OneToMany(mappedBy = "customer", cascade = CascadeType.ALL, fetch = FetchType.LAZY)
