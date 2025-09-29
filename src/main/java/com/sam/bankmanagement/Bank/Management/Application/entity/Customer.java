@@ -29,8 +29,14 @@ public class Customer {
     @Column(nullable = false, length = 100)
     private String lastName;
 
+    @Column(nullable = false, length = 10)
+    private String gender;
+
     @Column(nullable = false, unique = true, length = 150)
     private String email;
+
+    @Column(nullable = false)
+    private String password;
 
     @Column(nullable = false, length = 15)
     private String phone;
@@ -46,7 +52,7 @@ public class Customer {
     @Builder.Default
     private CustomerStatus status = CustomerStatus.ACTIVE;
 
-    @OneToMany(mappedBy = "customer", cascade = CascadeType.ALL, fetch = FetchType.LAZY)
+    @OneToMany(mappedBy = "customer", cascade = CascadeType.ALL, fetch = FetchType.EAGER)
     private List<Account> accounts;
 
     @CreationTimestamp
@@ -60,4 +66,3 @@ public class Customer {
         ACTIVE, INACTIVE, SUSPENDED
     }
 }
-

@@ -4,45 +4,40 @@ import com.sam.bankmanagement.Bank.Management.Application.dto.CreateCustomerRequ
 import com.sam.bankmanagement.Bank.Management.Application.dto.CustomerDto;
 import com.sam.bankmanagement.Bank.Management.Application.entity.Customer;
 import com.sam.bankmanagement.Bank.Management.Application.service.CustomerService;
+import com.sam.bankmanagement.Bank.Management.Application.mapper.DtoMapper;
+import com.sam.bankmanagement.Bank.Management.Application.util.SecurityUtil;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.Parameter;
 import io.swagger.v3.oas.annotations.responses.ApiResponse;
 import io.swagger.v3.oas.annotations.responses.ApiResponses;
 import io.swagger.v3.oas.annotations.tags.Tag;
+import io.swagger.v3.oas.annotations.security.SecurityRequirement;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
 
 @RestController
-@RequestMapping("/v1/customers")
-@Tag(name = "Customer Management", description = "APIs for managing bank customers")
+@RequestMapping("api/v1/customers")
+@SecurityRequirement(name = "Bearer Authentication")
+@CrossOrigin(origins = "*")
 public class CustomerController {
 
     private final CustomerService customerService;
+    private final DtoMapper dtoMapper;
 
-    public CustomerController(CustomerService customerService) {
+    public CustomerController(CustomerService customerService, DtoMapper dtoMapper) {
         this.customerService = customerService;
-    }
-
-    @PostMapping
-    @Operation(summary = "Create a new customer", description = "Creates a new customer in the bank system")
-    @ApiResponses(value = {
-            @ApiResponse(responseCode = "201", description = "Customer created successfully"),
-            @ApiResponse(responseCode = "400", description = "Invalid input data"),
-            @ApiResponse(responseCode = "409", description = "Customer already exists")
-    })
-    public ResponseEntity<CustomerDto> createCustomer(
-            @Valid @RequestBody CreateCustomerRequest request) {
-        CustomerDto customerDto = customerService.createCustomer(request);
-        return new ResponseEntity<>(customerDto, HttpStatus.CREATED);
+        this.dtoMapper = dtoMapper;
     }
 
     @GetMapping("/{id}")
-    @Operation(summary = "Get customer by ID", description = "Retrieves customer details by customer ID")
+    @Operation(summary = "Get customer by ID", description = "Retrieves customer details by customer ID (admin only or own profile)")
+    @PreAuthorize("hasRole('CUSTOMER')")
     @ApiResponses(value = {
             @ApiResponse(responseCode = "200", description = "Customer found"),
             @ApiResponse(responseCode = "404", description = "Customer not found")
@@ -50,43 +45,20 @@ public class CustomerController {
     public ResponseEntity<CustomerDto> getCustomerById(
             @Parameter(description = "Customer ID", required = true)
             @PathVariable Long id) {
+
+        Long currentCustomerId = SecurityUtil.getCurrentCustomerId();
+
+        if (!currentCustomerId.equals(id)) {
+            return ResponseEntity.status(HttpStatus.FORBIDDEN).build();
+        }
+
         CustomerDto customerDto = customerService.getCustomerById(id);
         return ResponseEntity.ok(customerDto);
     }
 
-    @GetMapping("/email/{email}")
-    @Operation(summary = "Get customer by email", description = "Retrieves customer details by email address")
-    @ApiResponses(value = {
-            @ApiResponse(responseCode = "200", description = "Customer found"),
-            @ApiResponse(responseCode = "404", description = "Customer not found")
-    })
-    public ResponseEntity<CustomerDto> getCustomerByEmail(
-            @Parameter(description = "Customer email", required = true)
-            @PathVariable String email) {
-        CustomerDto customerDto = customerService.getCustomerByEmail(email);
-        return ResponseEntity.ok(customerDto);
-    }
-
-    @GetMapping
-    @Operation(summary = "Get all customers", description = "Retrieves all customers in the system")
-    @ApiResponse(responseCode = "204", description = "Customers retrieved successfully")
-    public ResponseEntity<List<CustomerDto>> getAllCustomers() {
-        List<CustomerDto> customers = customerService.getAllCustomers();
-        return ResponseEntity.ok(customers);
-    }
-
-    @GetMapping("/search")
-    @Operation(summary = "Search customers", description = "Search customers by name or email")
-    @ApiResponse(responseCode = "200", description = "Search completed successfully")
-    public ResponseEntity<List<CustomerDto>> searchCustomers(
-            @Parameter(description = "Search term for customer name or email", required = true)
-            @RequestParam String searchTerm) {
-        List<CustomerDto> customers = customerService.searchCustomers(searchTerm);
-        return ResponseEntity.ok(customers);
-    }
-
     @PutMapping("/{id}")
-    @Operation(summary = "Update customer", description = "Updates customer information")
+    @Operation(summary = "Update customer", description = "Updates customer information (own profile only)")
+    @PreAuthorize("hasRole('CUSTOMER')")
     @ApiResponses(value = {
             @ApiResponse(responseCode = "200", description = "Customer updated successfully"),
             @ApiResponse(responseCode = "400", description = "Invalid input data"),
@@ -97,37 +69,30 @@ public class CustomerController {
             @Parameter(description = "Customer ID", required = true)
             @PathVariable Long id,
             @Valid @RequestBody CreateCustomerRequest request) {
+
+        Long currentCustomerId = SecurityUtil.getCurrentCustomerId();
+
+        if (!currentCustomerId.equals(id)) {
+            return ResponseEntity.status(HttpStatus.FORBIDDEN).build();
+        }
+
         CustomerDto customerDto = customerService.updateCustomer(id, request);
         return ResponseEntity.ok(customerDto);
     }
 
-    @PatchMapping("/{id}/status")
-    @Operation(summary = "Update customer status", description = "Updates customer status (ACTIVE, INACTIVE, SUSPENDED)")
-    @ApiResponses(value = {
-            @ApiResponse(responseCode = "200", description = "Customer status updated successfully"),
-            @ApiResponse(responseCode = "404", description = "Customer not found")
-    })
-    public ResponseEntity<CustomerDto> updateCustomerStatus(
-            @Parameter(description = "Customer ID", required = true)
-            @PathVariable Long id,
-            @Parameter(description = "New status", required = true)
-            @RequestParam Customer.CustomerStatus status) {
-        CustomerDto customerDto = customerService.updateCustomerStatus(id, status);
-        return ResponseEntity.ok(customerDto);
-    }
+    @GetMapping("/profile")
+    @Operation(summary = "Get current customer profile",
+            description = "Retrieve the profile of the currently authenticated customer")
+    @SecurityRequirement(name = "Bearer Authentication")
 
-    @DeleteMapping("/{id}")
-    @Operation(summary = "Delete customer", description = "Deletes a customer (only if no active accounts)")
-    @ApiResponses(value = {
-            @ApiResponse(responseCode = "204", description = "Customer deleted successfully"),
-            @ApiResponse(responseCode = "404", description = "Customer not found"),
-            @ApiResponse(responseCode = "400", description = "Customer has active accounts")
-    })
-    public ResponseEntity<Void> deleteCustomer(
-            @Parameter(description = "Customer ID", required = true)
-            @PathVariable Long id) {
-        customerService.deleteCustomer(id);
-        return ResponseEntity.noContent().build();
+    public ResponseEntity<CustomerDto> getCurrentCustomerProfile() {
+        Customer currentCustomer = SecurityUtil.getCurrentCustomer();
+        if (currentCustomer == null) {
+            return ResponseEntity.status(HttpStatus.UNAUTHORIZED).build();
+        }
+
+        CustomerDto customerDto = dtoMapper.toCustomerDto(currentCustomer);
+        return ResponseEntity.ok(customerDto);
     }
 
 }

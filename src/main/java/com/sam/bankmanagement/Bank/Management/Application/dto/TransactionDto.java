@@ -24,4 +24,5 @@ public class TransactionDto {
     private Transaction.TransactionStatus status;
     private LocalDateTime createdAt;
     private LocalDateTime completedAt;
+
 }
