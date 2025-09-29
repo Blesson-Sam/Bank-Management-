@@ -26,6 +26,16 @@ public interface TransactionRepository extends JpaRepository<Transaction, Long> 
 
     List<Transaction> findByStatus(Transaction.TransactionStatus status);
 
+    Page<Transaction> findByStatus(Transaction.TransactionStatus status, Pageable pageable);
+
+    Page<Transaction> findByCreatedAtBetween(LocalDateTime startDate, LocalDateTime endDate, Pageable pageable);
+
+    long countByCreatedAtAfter(LocalDateTime dateTime);
+
+    List<Transaction> findByFromAccountIdAndStatus(Long fromAccountId, Transaction.TransactionStatus status);
+
+    List<Transaction> findByToAccountIdAndStatus(Long toAccountId, Transaction.TransactionStatus status);
+
     @Query("SELECT t FROM Transaction t WHERE " +
             "(t.fromAccount.id = :accountId OR t.toAccount.id = :accountId) " +
             "ORDER BY t.createdAt DESC")
@@ -35,6 +45,16 @@ public interface TransactionRepository extends JpaRepository<Transaction, Long> 
             "(t.fromAccount.accountNumber = :accountNumber OR t.toAccount.accountNumber = :accountNumber) " +
             "ORDER BY t.createdAt DESC")
     List<Transaction> findByAccountNumber(@Param("accountNumber") String accountNumber);
+
+    @Query("SELECT t FROM Transaction t WHERE " +
+            "(t.fromAccount.accountNumber = :accountNumber OR t.toAccount.accountNumber = :accountNumber) " +
+            "ORDER BY t.createdAt DESC")
+    Page<Transaction> findByAccountNumber(@Param("accountNumber") String accountNumber, Pageable pageable);
+
+    @Query("SELECT t FROM Transaction t WHERE " +
+            "(t.fromAccount.customer.id = :customerId OR t.toAccount.customer.id = :customerId) " +
+            "ORDER BY t.createdAt DESC")
+    Page<Transaction> findByCustomerId(@Param("customerId") Long customerId, Pageable pageable);
 
     @Query("SELECT t FROM Transaction t WHERE " +
             "(t.fromAccount.id = :accountId OR t.toAccount.id = :accountId) " +

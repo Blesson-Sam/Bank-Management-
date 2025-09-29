@@ -4,43 +4,59 @@ import com.sam.bankmanagement.Bank.Management.Application.dto.AccountDto;
 import com.sam.bankmanagement.Bank.Management.Application.dto.CreateAccountRequest;
 import com.sam.bankmanagement.Bank.Management.Application.entity.Account;
 import com.sam.bankmanagement.Bank.Management.Application.service.AccountService;
+import com.sam.bankmanagement.Bank.Management.Application.util.SecurityUtil;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.Parameter;
 import io.swagger.v3.oas.annotations.responses.ApiResponse;
 import io.swagger.v3.oas.annotations.responses.ApiResponses;
 import io.swagger.v3.oas.annotations.tags.Tag;
-import jakarta.validation.Valid;
+import io.swagger.v3.oas.annotations.security.SecurityRequirement;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.*;
 
-import java.math.BigDecimal;
 import java.util.List;
 
 @RestController
-@RequestMapping("/v1/accounts")
+@RequestMapping("api/v1")
 @RequiredArgsConstructor
 @Tag(name = "Account Management", description = "APIs for managing bank accounts")
+@SecurityRequirement(name = "Bearer Authentication")
+@PreAuthorize("hasRole('CUSTOMER')")
+@CrossOrigin(origins = "*")
 public class AccountController {
 
     private final AccountService accountService;
 
-    @PostMapping
-    @Operation(summary = "Create a new account", description = "Creates a new savings or current account for a customer")
+    @PostMapping("accounts")
+    @Operation(summary = "Create a new account", description = "Creates a new savings or current account for the authenticated customer")
     @ApiResponses(value = {
             @ApiResponse(responseCode = "201", description = "Account created successfully"),
             @ApiResponse(responseCode = "400", description = "Invalid input data"),
             @ApiResponse(responseCode = "404", description = "Customer not found")
     })
     public ResponseEntity<AccountDto> createAccount(
-            @Valid @RequestBody CreateAccountRequest request) {
+             @RequestBody CreateAccountRequest request) {
+        Long currentCustomerId = SecurityUtil.getCurrentCustomerId();
+        request.setCustomerId(currentCustomerId);
+
         AccountDto accountDto = accountService.createAccount(request);
         return new ResponseEntity<>(accountDto, HttpStatus.CREATED);
     }
 
+    @GetMapping("/my-accounts")
+    @Operation(summary = "Get my accounts", description = "Retrieves all accounts for the authenticated customer")
+    @ApiResponse(responseCode = "200", description = "Accounts retrieved successfully")
+    public ResponseEntity<List<AccountDto>> getMyAccounts() {
+        Long currentCustomerId = SecurityUtil.getCurrentCustomerId();
+        List<AccountDto> accounts = accountService.getAccountsByCustomerId(currentCustomerId);
+        return ResponseEntity.ok(accounts);
+    }
+
     @GetMapping("/{accountNumber}")
-    @Operation(summary = "Get account by number", description = "Retrieves account details by account number")
+    @Operation(summary = "Get my account by number", description = "Retrieves account details by account number (only if owned by authenticated customer)")
     @ApiResponses(value = {
             @ApiResponse(responseCode = "200", description = "Account found"),
             @ApiResponse(responseCode = "404", description = "Account not found")
@@ -48,33 +64,18 @@ public class AccountController {
     public ResponseEntity<AccountDto> getAccountByNumber(
             @Parameter(description = "Account number", required = true)
             @PathVariable String accountNumber) {
+        Long currentCustomerId = SecurityUtil.getCurrentCustomerId();
         AccountDto accountDto = accountService.getAccountByNumber(accountNumber);
+
+        if (!accountDto.getCustomerId().equals(currentCustomerId)) {
+            return ResponseEntity.status(HttpStatus.FORBIDDEN).build();
+        }
+
         return ResponseEntity.ok(accountDto);
     }
 
-    @GetMapping("/customer/{customerId}")
-    @Operation(summary = "Get accounts by customer ID", description = "Retrieves all accounts for a specific customer")
-    @ApiResponses(value = {
-            @ApiResponse(responseCode = "200", description = "Accounts retrieved successfully"),
-            @ApiResponse(responseCode = "404", description = "Customer not found")
-    })
-    public ResponseEntity<List<AccountDto>> getAccountsByCustomerId(
-            @Parameter(description = "Customer ID", required = true)
-            @PathVariable Long customerId) {
-        List<AccountDto> accounts = accountService.getAccountsByCustomerId(customerId);
-        return ResponseEntity.ok(accounts);
-    }
-
-    @GetMapping
-    @Operation(summary = "Get all accounts", description = "Retrieves all accounts in the system")
-    @ApiResponse(responseCode = "200", description = "Accounts retrieved successfully")
-    public ResponseEntity<List<AccountDto>> getAllAccounts() {
-        List<AccountDto> accounts = accountService.getAllAccounts();
-        return ResponseEntity.ok(accounts);
-    }
-
     @PatchMapping("/{accountNumber}/status")
-    @Operation(summary = "Update account status", description = "Updates account status (ACTIVE, INACTIVE, CLOSED, FROZEN)")
+    @Operation(summary = "Update my account status", description = "Updates account status (only for owned accounts)")
     @ApiResponses(value = {
             @ApiResponse(responseCode = "200", description = "Account status updated successfully"),
             @ApiResponse(responseCode = "404", description = "Account not found")
@@ -84,35 +85,15 @@ public class AccountController {
             @PathVariable String accountNumber,
             @Parameter(description = "New status", required = true)
             @RequestParam Account.AccountStatus status) {
-        AccountDto accountDto = accountService.updateAccountStatus(accountNumber, status);
-        return ResponseEntity.ok(accountDto);
-    }
 
-    @PatchMapping("/{accountNumber}/interest-rate")
-    @Operation(summary = "Update interest rate", description = "Updates the interest rate for an account")
-    @ApiResponses(value = {
-            @ApiResponse(responseCode = "200", description = "Interest rate updated successfully"),
-            @ApiResponse(responseCode = "404", description = "Account not found")
-    })
-    public ResponseEntity<AccountDto> updateInterestRate(
-            @Parameter(description = "Account number", required = true)
-            @PathVariable String accountNumber,
-            @Parameter(description = "New interest rate", required = true)
-            @RequestParam BigDecimal interestRate) {
-        AccountDto accountDto = accountService.updateInterestRate(accountNumber, interestRate);
-        return ResponseEntity.ok(accountDto);
-    }
+        Long currentCustomerId = SecurityUtil.getCurrentCustomerId();
+        AccountDto accountDto = accountService.getAccountByNumber(accountNumber);
 
-    @PostMapping("/{accountNumber}/credit-interest")
-    @Operation(summary = "Credit accrued interest", description = "Credits the accrued interest to account balance")
-    @ApiResponses(value = {
-            @ApiResponse(responseCode = "200", description = "Interest credited successfully"),
-            @ApiResponse(responseCode = "404", description = "Account not found")
-    })
-    public ResponseEntity<String> creditAccruedInterest(
-            @Parameter(description = "Account number", required = true)
-            @PathVariable String accountNumber) {
-        accountService.creditAccruedInterest(accountNumber);
-        return ResponseEntity.ok("Accrued interest credited successfully");
+        if (!accountDto.getCustomerId().equals(currentCustomerId)) {
+            return ResponseEntity.status(HttpStatus.FORBIDDEN).build();
+        }
+
+        AccountDto updatedAccount = accountService.updateAccountStatus(accountNumber, status);
+        return ResponseEntity.ok(updatedAccount);
     }
 }

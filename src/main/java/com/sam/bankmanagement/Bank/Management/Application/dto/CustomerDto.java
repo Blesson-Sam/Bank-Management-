@@ -21,6 +21,7 @@ public class CustomerDto {
     private String phone;
     private String address;
     private String nationalId;
+    private String gender;
     private Customer.CustomerStatus status;
     private List<AccountDto> accounts;
     private LocalDateTime createdAt;

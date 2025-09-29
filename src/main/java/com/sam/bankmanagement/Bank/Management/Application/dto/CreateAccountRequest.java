@@ -16,7 +16,7 @@ import java.math.BigDecimal;
 @AllArgsConstructor
 public class CreateAccountRequest {
 
-    @NotNull(message = "Customer ID is required")
+
     private Long customerId;
 
     @NotNull(message = "Account type is required")

@@ -9,6 +9,8 @@ import org.springframework.stereotype.Repository;
 import java.time.LocalDateTime;
 import java.util.List;
 import java.util.Optional;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.Pageable;
 
 @Repository
 public interface AccountRepository extends JpaRepository<Account, Long> {
@@ -17,9 +19,15 @@ public interface AccountRepository extends JpaRepository<Account, Long> {
 
     List<Account> findByCustomerId(Long customerId);
 
+    Page<Account> findByCustomerId(Long customerId, Pageable pageable);
+
     List<Account> findByAccountType(Account.AccountType accountType);
 
     List<Account> findByStatus(Account.AccountStatus status);
+
+    long countByStatus(Account.AccountStatus status);
+
+    List<Account> findByAccountTypeAndStatus(Account.AccountType accountType, Account.AccountStatus status);
 
     boolean existsByAccountNumber(String accountNumber);
 

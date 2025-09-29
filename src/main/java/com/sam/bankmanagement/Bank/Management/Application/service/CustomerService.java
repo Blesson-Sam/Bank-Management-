@@ -16,6 +16,8 @@ import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
 
 import java.util.List;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.Pageable;
 
 @Service
 @RequiredArgsConstructor
@@ -74,6 +76,13 @@ public class CustomerService {
         log.info("Fetching all customers");
         List<Customer> customers = customerRepository.findAll();
         return dtoMapper.toCustomerDtos(customers);
+    }
+
+    @Transactional(readOnly = true)
+    public Page<CustomerDto> getAllCustomers(Pageable pageable) {
+        log.info("Fetching all customers with pagination");
+        Page<Customer> customers = customerRepository.findAll(pageable);
+        return customers.map(dtoMapper::toCustomerDto);
     }
 
     @Transactional(readOnly = true)
