@@ -22,6 +22,8 @@ public interface CustomerRepository extends JpaRepository<Customer, Long> {
 
     List<Customer> findByStatus(Customer.CustomerStatus status);
 
+    long countByStatus(Customer.CustomerStatus status);
+
     @Query("SELECT c FROM Customer c WHERE " +
             "LOWER(c.firstName) LIKE LOWER(CONCAT('%', :searchTerm, '%')) OR " +
             "LOWER(c.lastName) LIKE LOWER(CONCAT('%', :searchTerm, '%')) OR " +
@@ -31,4 +33,3 @@ public interface CustomerRepository extends JpaRepository<Customer, Long> {
     @Query("SELECT c FROM Customer c JOIN c.accounts a WHERE a.accountNumber = :accountNumber")
     Optional<Customer> findByAccountNumber(@Param("accountNumber") String accountNumber);
 }
-

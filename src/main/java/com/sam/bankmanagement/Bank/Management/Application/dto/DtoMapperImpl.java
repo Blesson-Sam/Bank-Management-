@@ -26,6 +26,7 @@ public class DtoMapperImpl implements DtoMapper {
                 .phone(customer.getPhone())
                 .address(customer.getAddress())
                 .nationalId(customer.getNationalId())
+                .gender(customer.getGender())
                 .status(customer.getStatus())
                 .accounts(toAccountDtos(customer.getAccounts()))
                 .createdAt(customer.getCreatedAt())

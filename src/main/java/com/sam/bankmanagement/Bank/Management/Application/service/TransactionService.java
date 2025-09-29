@@ -123,6 +123,17 @@ public class TransactionService {
     }
 
     @Transactional(readOnly = true)
+    public Page<TransactionDto> getTransactionsByAccountNumber(String accountNumber, Pageable pageable) {
+        log.info("Fetching transactions for account number: {} with pagination", accountNumber);
+
+        Account account = accountRepository.findByAccountNumber(accountNumber)
+                .orElseThrow(() -> new ResourceNotFoundException("Account", "accountNumber", accountNumber));
+
+        Page<Transaction> transactions = transactionRepository.findByAccountNumber(accountNumber, pageable);
+        return transactions.map(dtoMapper::toTransactionDto);
+    }
+
+    @Transactional(readOnly = true)
     public List<TransactionDto> getTransactionsByAccountAndDateRange(String accountNumber,
                                                                      LocalDateTime startDate,
                                                                      LocalDateTime endDate) {
@@ -141,6 +152,13 @@ public class TransactionService {
         log.info("Fetching all transactions");
         List<Transaction> transactions = transactionRepository.findAll();
         return dtoMapper.toTransactionDtos(transactions);
+    }
+
+    @Transactional(readOnly = true)
+    public Page<TransactionDto> getAllTransactions(Pageable pageable) {
+        log.info("Fetching all transactions with pagination");
+        Page<Transaction> transactions = transactionRepository.findAll(pageable);
+        return transactions.map(dtoMapper::toTransactionDto);
     }
 
     private Account getActiveAccount(String accountNumber) {

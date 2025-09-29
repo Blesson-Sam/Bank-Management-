@@ -14,6 +14,8 @@ import com.sam.bankmanagement.Bank.Management.Application.repository.Transaction
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Value;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.Pageable;
 import org.springframework.scheduling.annotation.Scheduled;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -114,6 +116,28 @@ public class AccountService {
         log.info("Fetching all accounts");
         List<Account> accounts = accountRepository.findAll();
         return dtoMapper.toAccountDtos(accounts);
+    }
+
+    @Transactional(readOnly = true)
+    public Page<AccountDto> getAllAccounts(Pageable pageable) {
+        log.info("Fetching all accounts with pagination");
+        Page<Account> accounts = accountRepository.findAll(pageable);
+        return accounts.map(dtoMapper::toAccountDto);
+    }
+
+    @Transactional(readOnly = true)
+    public AccountDto getAccountById(Long accountId) {
+        log.info("Fetching account with ID: {}", accountId);
+        Account account = accountRepository.findById(accountId)
+                .orElseThrow(() -> new ResourceNotFoundException("Account", "id", accountId));
+        return dtoMapper.toAccountDto(account);
+    }
+
+    @Transactional(readOnly = true)
+    public Page<AccountDto> getAccountsByCustomerId(Long customerId, Pageable pageable) {
+        log.info("Fetching accounts for customer ID: {} with pagination", customerId);
+        Page<Account> accounts = accountRepository.findByCustomerId(customerId, pageable);
+        return accounts.map(dtoMapper::toAccountDto);
     }
 
     @Transactional
