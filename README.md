@@ -1,7 +1,7 @@
-## Admin ID : 
-## Admin Password :
+## Admin ID : admin@bankapp.com
+## Admin Password : admin123
 
-DB Scehma 
+##DB Schema 
 
 1. Customer Table
 
@@ -53,6 +53,4 @@ CREATE TABLE transactions (
     CONSTRAINT fk_from_account FOREIGN KEY (from_account_id) REFERENCES accounts(id),
     CONSTRAINT fk_to_account FOREIGN KEY (to_account_id) REFERENCES accounts(id)
 );
-  
-<img width="451" height="640" alt="image" src="https://github.com/user-attachments/assets/689a6d52-b0a7-482d-8710-99f16cff3a55" />
 
