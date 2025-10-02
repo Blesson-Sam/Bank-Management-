@@ -241,21 +241,6 @@ class AccountServiceTest {
         verify(dtoMapper).toAccountDto(any(Account.class));
     }
 
-    @Test
-    @DisplayName("Credit Accrued Interest - Success")
-    void creditAccruedInterest_Success() {
-
-        when(accountRepository.findByAccountNumber("ACC0987654321")).thenReturn(Optional.of(currentAccount));
-        when(accountRepository.save(any(Account.class))).thenReturn(currentAccount);
-        when(transactionRepository.save(any(Transaction.class))).thenReturn(new Transaction());
-
-        assertDoesNotThrow(() -> accountService.creditAccruedInterest("ACC0987654321"));
-
-        verify(accountRepository).findByAccountNumber("ACC0987654321");
-        verify(transactionRepository).save(any(Transaction.class)); // Interest credit transaction
-        verify(accountRepository).save(any(Account.class));
-    }
-
 
     @Test
     @DisplayName("Calculate Daily Interest - Success")

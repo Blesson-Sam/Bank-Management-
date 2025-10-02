@@ -14,22 +14,8 @@ public interface CustomerRepository extends JpaRepository<Customer, Long> {
 
     Optional<Customer> findByEmail(String email);
 
-    Optional<Customer> findByNationalId(String nationalId);
-
     boolean existsByEmail(String email);
 
     boolean existsByNationalId(String nationalId);
 
-    List<Customer> findByStatus(Customer.CustomerStatus status);
-
-    long countByStatus(Customer.CustomerStatus status);
-
-    @Query("SELECT c FROM Customer c WHERE " +
-            "LOWER(c.firstName) LIKE LOWER(CONCAT('%', :searchTerm, '%')) OR " +
-            "LOWER(c.lastName) LIKE LOWER(CONCAT('%', :searchTerm, '%')) OR " +
-            "LOWER(c.email) LIKE LOWER(CONCAT('%', :searchTerm, '%'))")
-    List<Customer> searchCustomers(@Param("searchTerm") String searchTerm);
-
-    @Query("SELECT c FROM Customer c JOIN c.accounts a WHERE a.accountNumber = :accountNumber")
-    Optional<Customer> findByAccountNumber(@Param("accountNumber") String accountNumber);
 }

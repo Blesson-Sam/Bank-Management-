@@ -63,7 +63,6 @@ public class SecurityConfig {
                         .requestMatchers("/swagger-resources/**").permitAll()
                         .requestMatchers("/webjars/**").permitAll()
                         .requestMatchers("/swagger-ui/index.html").permitAll()
-                        // Admin endpoints require authentication
                         .requestMatchers("/api/admin/**").authenticated()
                         .requestMatchers("/error").permitAll()
                         .anyRequest().authenticated()

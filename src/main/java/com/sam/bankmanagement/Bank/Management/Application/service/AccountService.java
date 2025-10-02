@@ -118,27 +118,7 @@ public class AccountService {
         return dtoMapper.toAccountDtos(accounts);
     }
 
-    @Transactional(readOnly = true)
-    public Page<AccountDto> getAllAccounts(Pageable pageable) {
-        log.info("Fetching all accounts with pagination");
-        Page<Account> accounts = accountRepository.findAll(pageable);
-        return accounts.map(dtoMapper::toAccountDto);
-    }
 
-    @Transactional(readOnly = true)
-    public AccountDto getAccountById(Long accountId) {
-        log.info("Fetching account with ID: {}", accountId);
-        Account account = accountRepository.findById(accountId)
-                .orElseThrow(() -> new ResourceNotFoundException("Account", "id", accountId));
-        return dtoMapper.toAccountDto(account);
-    }
-
-    @Transactional(readOnly = true)
-    public Page<AccountDto> getAccountsByCustomerId(Long customerId, Pageable pageable) {
-        log.info("Fetching accounts for customer ID: {} with pagination", customerId);
-        Page<Account> accounts = accountRepository.findByCustomerId(customerId, pageable);
-        return accounts.map(dtoMapper::toAccountDto);
-    }
 
     @Transactional
     public AccountDto updateAccountStatus(String accountNumber, Account.AccountStatus status) {
@@ -201,34 +181,6 @@ public class AccountService {
         log.debug("Interest calculated for account {}: {}", account.getAccountNumber(), dailyInterest);
     }
 
-    @Transactional
-    public void creditAccruedInterest(String accountNumber) {
-        log.info("Crediting accrued interest for account: {}", accountNumber);
-
-        Account account = accountRepository.findByAccountNumber(accountNumber)
-                .orElseThrow(() -> new ResourceNotFoundException("Account", "accountNumber", accountNumber));
-
-        if (account.getAccruedInterest().compareTo(BigDecimal.ZERO) > 0) {
-            account.setBalance(account.getBalance().add(account.getAccruedInterest()));
-
-            Transaction interestTransaction = Transaction.builder()
-                    .transactionId(UUID.randomUUID().toString())
-                    .type(Transaction.TransactionType.INTEREST_CREDIT)
-                    .amount(account.getAccruedInterest())
-                    .description("Interest credit")
-                    .toAccount(account)
-                    .status(Transaction.TransactionStatus.COMPLETED)
-                    .completedAt(LocalDateTime.now())
-                    .build();
-
-            transactionRepository.save(interestTransaction);
-
-            account.setAccruedInterest(BigDecimal.ZERO);
-            accountRepository.save(account);
-
-            log.info("Accrued interest credited successfully for account: {}", accountNumber);
-        }
-    }
 
     private String generateAccountNumber() {
         String prefix = "ACC";

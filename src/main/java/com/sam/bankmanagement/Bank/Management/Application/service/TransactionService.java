@@ -97,14 +97,6 @@ public class TransactionService {
     }
 
     @Transactional(readOnly = true)
-    public TransactionDto getTransactionByTransactionId(String transactionId) {
-        log.info("Fetching transaction with transaction ID: {}", transactionId);
-        Transaction transaction = transactionRepository.findByTransactionId(transactionId)
-                .orElseThrow(() -> new ResourceNotFoundException("Transaction", "transactionId", transactionId));
-        return dtoMapper.toTransactionDto(transaction);
-    }
-
-    @Transactional(readOnly = true)
     public Page<TransactionDto> getTransactionsByAccountId(Long accountId, Pageable pageable) {
         log.info("Fetching transactions for account ID: {}", accountId);
         Page<Transaction> transactions = transactionRepository.findByAccountId(accountId, pageable);

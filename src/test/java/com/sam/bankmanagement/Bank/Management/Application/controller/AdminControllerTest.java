@@ -171,24 +171,6 @@ class AdminControllerTest {
         verify(adminService).getAllAccounts(any(Pageable.class));
     }
 
-    @Test
-    @DisplayName("Should get accounts by customer ID with pagination")
-    void getAccountsByCustomerId_Success() throws Exception {
-        Pageable pageable = PageRequest.of(0, 10);
-        Page<AccountDto> accountPage = new PageImpl<>(accountList, pageable, accountList.size());
-
-        when(adminService.getAccountsByCustomerId(anyLong(), any(Pageable.class)))
-                .thenReturn(accountPage);
-
-        ResponseEntity<Page<AccountDto>> response = adminController.getAccountsByCustomerId(1L, 0, 10);
-
-        assertEquals(HttpStatus.OK, response.getStatusCode());
-        assertNotNull(response.getBody());
-        assertEquals(1, response.getBody().getContent().size());
-        assertEquals(1L, response.getBody().getContent().get(0).getCustomerId());
-
-        verify(adminService).getAccountsByCustomerId(eq(1L), any(Pageable.class));
-    }
 
     @Test
     @DisplayName("Should update account status")
@@ -254,58 +236,7 @@ class AdminControllerTest {
         verify(adminService).getAllTransactions(any(Pageable.class));
     }
 
-    @Test
-    @DisplayName("Should get transaction by ID")
-    void getTransactionById_Success() throws Exception {
-        when(adminService.getTransactionById(anyLong()))
-                .thenReturn(transactionDto);
 
-        ResponseEntity<TransactionDto> response = adminController.getTransactionById(1L);
-
-        assertEquals(HttpStatus.OK, response.getStatusCode());
-        assertNotNull(response.getBody());
-        assertEquals(1L, response.getBody().getId());
-        assertEquals("TXN123456", response.getBody().getTransactionId());
-
-        verify(adminService).getTransactionById(1L);
-    }
-
-    @Test
-    @DisplayName("Should get transactions by account number with pagination")
-    void getTransactionsByAccountNumber_Success() throws Exception {
-        Pageable pageable = PageRequest.of(0, 100);
-        Page<TransactionDto> transactionPage = new PageImpl<>(transactionList, pageable, transactionList.size());
-
-        when(adminService.getTransactionsByAccountNumber(anyString(), any(Pageable.class)))
-                .thenReturn(transactionPage);
-
-        ResponseEntity<Page<TransactionDto>> response = adminController.getTransactionsByAccountNumber("ACC123456", 0, 100);
-
-        assertEquals(HttpStatus.OK, response.getStatusCode());
-        assertNotNull(response.getBody());
-        assertEquals(1, response.getBody().getContent().size());
-        assertEquals("ACC123456", response.getBody().getContent().get(0).getToAccountNumber());
-
-        verify(adminService).getTransactionsByAccountNumber(eq("ACC123456"), any(Pageable.class));
-    }
-
-    @Test
-    @DisplayName("Should get transactions by customer ID with pagination")
-    void getTransactionsByCustomerId_Success() throws Exception {
-        Pageable pageable = PageRequest.of(0, 100);
-        Page<TransactionDto> transactionPage = new PageImpl<>(transactionList, pageable, transactionList.size());
-
-        when(adminService.getTransactionsByCustomerId(anyLong(), any(Pageable.class)))
-                .thenReturn(transactionPage);
-
-        ResponseEntity<Page<TransactionDto>> response = adminController.getTransactionsByCustomerId(1L, 0, 100);
-
-        assertEquals(HttpStatus.OK, response.getStatusCode());
-        assertNotNull(response.getBody());
-        assertEquals(1, response.getBody().getContent().size());
-
-        verify(adminService).getTransactionsByCustomerId(eq(1L), any(Pageable.class));
-    }
 
     @Test
     @DisplayName("Should get transactions by date range with pagination")

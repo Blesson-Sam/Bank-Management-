@@ -103,10 +103,9 @@ class CustomerServiceTest {
     @Test
     @DisplayName("Create Customer - Duplicate Email")
     void createCustomer_DuplicateEmail_ThrowsException() {
-        // Given
+
         when(customerRepository.existsByEmail(anyString())).thenReturn(true);
 
-        // When & Then
         DuplicateResourceException exception = assertThrows(DuplicateResourceException.class,
                 () -> customerService.createCustomer(validCreateRequest));
 
@@ -118,11 +117,10 @@ class CustomerServiceTest {
     @Test
     @DisplayName("Create Customer - Duplicate National ID")
     void createCustomer_DuplicateNationalId_ThrowsException() {
-        // Given
+
         when(customerRepository.existsByEmail(anyString())).thenReturn(false);
         when(customerRepository.existsByNationalId(anyString())).thenReturn(true);
 
-        // When & Then
         DuplicateResourceException exception = assertThrows(DuplicateResourceException.class,
                 () -> customerService.createCustomer(validCreateRequest));
 
@@ -136,14 +134,12 @@ class CustomerServiceTest {
     @Test
     @DisplayName("Get Customer By Email - Success")
     void getCustomerByEmail_Success() {
-        // Given
+
         when(customerRepository.findByEmail("b.sam@email.com")).thenReturn(Optional.of(validCustomer));
         when(dtoMapper.toCustomerDto(validCustomer)).thenReturn(validCustomerDto);
 
-        // When
         CustomerDto result = customerService.getCustomerByEmail("b.sam@email.com");
 
-        // Then
         assertNotNull(result);
         assertEquals("b.sam@email.com", result.getEmail());
         verify(customerRepository).findByEmail("b.sam@email.com");
@@ -153,14 +149,12 @@ class CustomerServiceTest {
     @Test
     @DisplayName("Get All Customers - Success")
     void getAllCustomers_Success() {
-        // Given
+
         when(customerRepository.findAll()).thenReturn(customerList);
         when(dtoMapper.toCustomerDtos(customerList)).thenReturn(customerDtoList);
 
-        // When
         List<CustomerDto> result = customerService.getAllCustomers();
 
-        // Then
         assertNotNull(result);
         assertEquals(2, result.size());
         verify(customerRepository).findAll();
@@ -172,7 +166,7 @@ class CustomerServiceTest {
     @Test
     @DisplayName("Update Customer - Success")
     void updateCustomer_Success() {
-        // Given
+
         CreateCustomerRequest updateRequest = CreateCustomerRequest.builder()
                 .firstName("Johnny")
                 .lastName("Doe")
@@ -198,10 +192,8 @@ class CustomerServiceTest {
         when(customerRepository.save(any(Customer.class))).thenReturn(updatedCustomer);
         when(dtoMapper.toCustomerDto(any(Customer.class))).thenReturn(validCustomerDto);
 
-        // When
         CustomerDto result = customerService.updateCustomer(1L, updateRequest);
 
-        // Then
         assertNotNull(result);
         verify(customerRepository).findById(1L);
         verify(customerRepository).save(any(Customer.class));
@@ -211,15 +203,13 @@ class CustomerServiceTest {
     @Test
     @DisplayName("Update Customer Status - Success")
     void updateCustomerStatus_Success() {
-        // Given
+
         when(customerRepository.findById(1L)).thenReturn(Optional.of(validCustomer));
         when(customerRepository.save(any(Customer.class))).thenReturn(validCustomer);
         when(dtoMapper.toCustomerDto(any(Customer.class))).thenReturn(validCustomerDto);
 
-        // When
         CustomerDto result = customerService.updateCustomerStatus(1L, Customer.CustomerStatus.SUSPENDED);
 
-        // Then
         assertNotNull(result);
         verify(customerRepository).findById(1L);
         verify(customerRepository).save(any(Customer.class));

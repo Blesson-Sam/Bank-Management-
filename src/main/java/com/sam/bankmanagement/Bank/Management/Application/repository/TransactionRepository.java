@@ -16,21 +16,10 @@ import java.util.Optional;
 @Repository
 public interface TransactionRepository extends JpaRepository<Transaction, Long> {
 
-    Optional<Transaction> findByTransactionId(String transactionId);
-
-    List<Transaction> findByFromAccountIdOrderByCreatedAtDesc(Long accountId);
-
-    List<Transaction> findByToAccountIdOrderByCreatedAtDesc(Long accountId);
-
-    List<Transaction> findByType(Transaction.TransactionType type);
-
-    List<Transaction> findByStatus(Transaction.TransactionStatus status);
-
     Page<Transaction> findByStatus(Transaction.TransactionStatus status, Pageable pageable);
 
     Page<Transaction> findByCreatedAtBetween(LocalDateTime startDate, LocalDateTime endDate, Pageable pageable);
 
-    long countByCreatedAtAfter(LocalDateTime dateTime);
 
     List<Transaction> findByFromAccountIdAndStatus(Long fromAccountId, Transaction.TransactionStatus status);
 
@@ -64,25 +53,5 @@ public interface TransactionRepository extends JpaRepository<Transaction, Long> 
                                                   @Param("startDate") LocalDateTime startDate,
                                                   @Param("endDate") LocalDateTime endDate);
 
-    @Query("SELECT SUM(t.amount) FROM Transaction t WHERE " +
-            "t.toAccount.id = :accountId AND t.type = 'DEPOSIT' AND t.status = 'COMPLETED' " +
-            "AND t.createdAt BETWEEN :startDate AND :endDate")
-    BigDecimal getTotalDeposits(@Param("accountId") Long accountId,
-                                @Param("startDate") LocalDateTime startDate,
-                                @Param("endDate") LocalDateTime endDate);
-
-    @Query("SELECT SUM(t.amount) FROM Transaction t WHERE " +
-            "t.fromAccount.id = :accountId AND t.type = 'WITHDRAWAL' AND t.status = 'COMPLETED' " +
-            "AND t.createdAt BETWEEN :startDate AND :endDate")
-    BigDecimal getTotalWithdrawals(@Param("accountId") Long accountId,
-                                   @Param("startDate") LocalDateTime startDate,
-                                   @Param("endDate") LocalDateTime endDate);
-
-    @Query(value = "SELECT COUNT(*) FROM transaction t " +
-            "WHERE (t.from_account_id = :accountId OR t.to_account_id = :accountId) " +
-            "AND t.status = 'COMPLETED' " +
-            "AND t.created_at::date = CURRENT_DATE",
-            nativeQuery = true)
-    long countTodaysTransactions(@Param("accountId") Long accountId);
 
 }

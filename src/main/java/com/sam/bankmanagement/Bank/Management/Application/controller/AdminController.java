@@ -32,7 +32,7 @@ public class AdminController {
     @GetMapping("/customers")
     public ResponseEntity<Page<CustomerDto>> getAllCustomers(
             @RequestParam(defaultValue = "0") int page,
-            @RequestParam(defaultValue = "10") int size) {
+            @RequestParam(defaultValue = "100") int size) {
         Pageable pageable = PageRequest.of(page, size);
         Page<CustomerDto> customers = adminService.getAllCustomers(pageable);
         return ResponseEntity.ok(customers);
@@ -64,23 +64,12 @@ public class AdminController {
     @GetMapping("/accounts")
     public ResponseEntity<Page<AccountDto>> getAllAccounts(
             @RequestParam(defaultValue = "0") int page,
-            @RequestParam(defaultValue = "10") int size) {
+            @RequestParam(defaultValue = "100") int size) {
         Pageable pageable = PageRequest.of(page, size);
         Page<AccountDto> accounts = adminService.getAllAccounts(pageable);
         return ResponseEntity.ok(accounts);
     }
 
-
-    @Operation(summary = "Get accounts by customer ID")
-    @GetMapping("/customers/{customerId}/accounts")
-    public ResponseEntity<Page<AccountDto>> getAccountsByCustomerId(
-            @PathVariable Long customerId,
-            @RequestParam(defaultValue = "0") int page,
-            @RequestParam(defaultValue = "10") int size) {
-        Pageable pageable = PageRequest.of(page, size);
-        Page<AccountDto> accounts = adminService.getAccountsByCustomerId(customerId, pageable);
-        return ResponseEntity.ok(accounts);
-    }
 
     @Operation(summary = "Update account status")
     @PutMapping("/accounts/{accountId}/status")
@@ -123,43 +112,13 @@ public class AdminController {
         return ResponseEntity.ok(transactions);
     }
 
-    @Operation(summary = "Get transaction by ID")
-    @GetMapping("/transactions/{transactionId}")
-    public ResponseEntity<TransactionDto> getTransactionById(@PathVariable Long transactionId) {
-        TransactionDto transaction = adminService.getTransactionById(transactionId);
-        return ResponseEntity.ok(transaction);
-    }
-
-
-    @Operation(summary = "Get transactions by account number")
-    @GetMapping("/accounts/{accountNumber}/transactions")
-    public ResponseEntity<Page<TransactionDto>> getTransactionsByAccountNumber(
-            @PathVariable String accountNumber,
-            @RequestParam(defaultValue = "0") int page,
-            @RequestParam(defaultValue = "100") int size) {
-        Pageable pageable = PageRequest.of(page, size);
-        Page<TransactionDto> transactions = adminService.getTransactionsByAccountNumber(accountNumber, pageable);
-        return ResponseEntity.ok(transactions);
-    }
-
-    @Operation(summary = "Get transactions by customer ID")
-    @GetMapping("/customers/{customerId}/transactions")
-    public ResponseEntity<Page<TransactionDto>> getTransactionsByCustomerId(
-            @PathVariable Long customerId,
-            @RequestParam(defaultValue = "0") int page,
-            @RequestParam(defaultValue = "100") int size) {
-        Pageable pageable = PageRequest.of(page, size);
-        Page<TransactionDto> transactions = adminService.getTransactionsByCustomerId(customerId, pageable);
-        return ResponseEntity.ok(transactions);
-    }
-
     @Operation(summary = "Get transactions by date range")
     @GetMapping("/transactions/date-range")
     public ResponseEntity<Page<TransactionDto>> getTransactionsByDateRange(
             @RequestParam @DateTimeFormat(iso = DateTimeFormat.ISO.DATE_TIME) LocalDateTime startDate,
             @RequestParam @DateTimeFormat(iso = DateTimeFormat.ISO.DATE_TIME) LocalDateTime endDate,
             @RequestParam(defaultValue = "0") int page,
-            @RequestParam(defaultValue = "10") int size) {
+            @RequestParam(defaultValue = "100") int size) {
         Pageable pageable = PageRequest.of(page, size);
         Page<TransactionDto> transactions = adminService.getTransactionsByDateRange(startDate, endDate, pageable);
         return ResponseEntity.ok(transactions);

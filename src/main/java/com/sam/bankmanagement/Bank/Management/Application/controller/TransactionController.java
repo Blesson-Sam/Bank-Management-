@@ -131,36 +131,6 @@ public class TransactionController {
         return ResponseEntity.ok(transactions);
     }
 
-    @GetMapping("/account/{accountNumber}/paginated")
-    @Operation(summary = "Get paginated transactions for my account", description = "Retrieves paginated transactions for a specific account (only if owned)")
-    @ApiResponse(responseCode = "200", description = "Transactions retrieved successfully")
-    public ResponseEntity<Page<TransactionDto>> getTransactionsByAccountIdPaginated(
-            @Parameter(description = "Account number", required = true)
-            @PathVariable String accountNumber,
-            @Parameter(description = "Page number (0-based)")
-            @RequestParam(defaultValue = "0") int page,
-            @Parameter(description = "Page size")
-            @RequestParam(defaultValue = "10") int size,
-            @Parameter(description = "Sort by field")
-            @RequestParam(defaultValue = "createdAt") String sortBy,
-            @Parameter(description = "Sort direction")
-            @RequestParam(defaultValue = "desc") String sortDir) {
-
-        Long currentCustomerId = SecurityUtil.getCurrentCustomerId();
-
-        if (!isAccountOwnedByCustomer(accountNumber, currentCustomerId)) {
-            return ResponseEntity.status(HttpStatus.FORBIDDEN).build();
-        }
-
-        AccountDto account = accountService.getAccountByNumber(accountNumber);
-
-        Sort sort = sortDir.equalsIgnoreCase("desc") ?
-                Sort.by(sortBy).descending() : Sort.by(sortBy).ascending();
-
-        Pageable pageable = PageRequest.of(page, size, sort);
-        Page<TransactionDto> transactions = transactionService.getTransactionsByAccountId(account.getId(), pageable);
-        return ResponseEntity.ok(transactions);
-    }
 
     @GetMapping("/account/{accountNumber}/date-range")
     @Operation(summary = "Get transactions by date range for my account", description = "Retrieves transactions for your account within a date range")
@@ -204,25 +174,6 @@ public class TransactionController {
         return ResponseEntity.ok(transactionDto);
     }
 
-    @GetMapping("/transaction-id/{transactionId}")
-    @Operation(summary = "Get my transaction by transaction ID", description = "Retrieves transaction details by unique transaction ID (only if it involves your accounts)")
-    @ApiResponses(value = {
-            @ApiResponse(responseCode = "200", description = "Transaction found"),
-            @ApiResponse(responseCode = "404", description = "Transaction not found")
-    })
-    public ResponseEntity<TransactionDto> getTransactionByTransactionId(
-            @Parameter(description = "Unique transaction ID", required = true)
-            @PathVariable String transactionId) {
-
-        Long currentCustomerId = SecurityUtil.getCurrentCustomerId();
-        TransactionDto transactionDto = transactionService.getTransactionByTransactionId(transactionId);
-
-        if (!isTransactionOwnedByCustomer(transactionDto, currentCustomerId)) {
-            return ResponseEntity.status(HttpStatus.FORBIDDEN).build();
-        }
-
-        return ResponseEntity.ok(transactionDto);
-    }
 
     private boolean isAccountOwnedByCustomer(String accountNumber, Long customerId) {
         try {

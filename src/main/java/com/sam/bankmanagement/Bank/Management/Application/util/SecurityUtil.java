@@ -23,8 +23,6 @@ public class SecurityUtil {
         if (authentication != null && authentication.getPrincipal() instanceof User) {
             User userDetails = (User) authentication.getPrincipal();
             String email = userDetails.getUsername();
-
-            // Check if it's not an admin user
             if (!"admin@bankapp.com".equals(email)) {
                 return customerRepository.findByEmail(email).orElse(null);
             }
@@ -37,28 +35,4 @@ public class SecurityUtil {
         return customer != null ? customer.getId() : null;
     }
 
-    public static String getCurrentCustomerEmail() {
-        Customer customer = getCurrentCustomer();
-        return customer != null ? customer.getEmail() : null;
-    }
-
-    public static boolean isCurrentUserAdmin() {
-        Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
-        if (authentication != null && authentication.getPrincipal() instanceof User) {
-            User userDetails = (User) authentication.getPrincipal();
-            return "admin@bankapp.com".equals(userDetails.getUsername()) ||
-                   authentication.getAuthorities().stream()
-                       .anyMatch(auth -> "ROLE_ADMIN".equals(auth.getAuthority()));
-        }
-        return false;
-    }
-
-    public static String getCurrentUserEmail() {
-        Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
-        if (authentication != null && authentication.getPrincipal() instanceof User) {
-            User userDetails = (User) authentication.getPrincipal();
-            return userDetails.getUsername();
-        }
-        return null;
-    }
 }

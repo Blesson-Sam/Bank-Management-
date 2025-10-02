@@ -78,19 +78,7 @@ public class CustomerService {
         return dtoMapper.toCustomerDtos(customers);
     }
 
-    @Transactional(readOnly = true)
-    public Page<CustomerDto> getAllCustomers(Pageable pageable) {
-        log.info("Fetching all customers with pagination");
-        Page<Customer> customers = customerRepository.findAll(pageable);
-        return customers.map(dtoMapper::toCustomerDto);
-    }
 
-    @Transactional(readOnly = true)
-    public List<CustomerDto> searchCustomers(String searchTerm) {
-        log.info("Searching customers with term: {}", searchTerm);
-        List<Customer> customers = customerRepository.searchCustomers(searchTerm);
-        return dtoMapper.toCustomerDtos(customers);
-    }
 
     @Transactional
     public CustomerDto updateCustomer(Long id, CreateCustomerRequest request) {
