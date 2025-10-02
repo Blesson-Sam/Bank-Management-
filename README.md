@@ -1,7 +1,7 @@
 ## Admin ID : admin@bankapp.com
 ## Admin Password : admin123
 
-##DB Schema 
+## DB Schema 
 
 1. Customer Table
 
